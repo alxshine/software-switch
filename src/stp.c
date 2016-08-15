@@ -369,7 +369,7 @@ int main(int argc, char ** argv){
         indices[i] = i;
 
         //the indices solution is not pretty, but it keeps the loop from running away with i
-        //(resulting in segfaults)
+        //(which would result in segfaults)
         if(pthread_create(&ifaceThreads[i], NULL, &interFaceThread, &indices[i]) < 0){
             perror("Could not create interface thread");
             exit(-1);

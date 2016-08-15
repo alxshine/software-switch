@@ -28,6 +28,11 @@ pthread_mutex_t ifaceMutex;
 int n;
 char **names;
 unsigned char **neighbours;
+unsigned char **interfaces;
+unsigned char *bridgeId;
+unsigned char ***macTable;
+int *macIndices;
+unsigned char **lastSwitchPackets;
 PortState *states;
 time_t *timestamps;
 int *socks;
@@ -36,7 +41,6 @@ int hadTc;
 int rootPathCost;
 unsigned char root[6];
 unsigned char rootPriority, rootExtension;
-unsigned char bridgeId[6];
 unsigned short messageAge;
 
 //global config variables
@@ -45,6 +49,7 @@ int maxAge;
 int forwardDelay;
 int portCost;
 unsigned char priority, extension;
+int macTableSize;
 
 int create_socket(char *device, int *sockfd, unsigned char *mac){
     int sock;
@@ -262,8 +267,83 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         psize-=2;
     
         updatePortStates(currentIndex, rPriority, rExtension, rootMac, pathCost, age, bPriority, bExtension);
-    }
+    }else{
+        //handle non-stp packets here
+        //skip packets originating from this interface
+        if(memcmp(ethh->h_source, interfaces[currentIndex], 6) == 0){
+            return;
+        }
 
+        //skip packets sent by another interface listener
+        for(int i=0; i<n; i++)
+            if(i == currentIndex)
+                continue;
+            else
+                if(memcmp(lastSwitchPackets[i], bytes, header->len) == 0)
+                    return;
+
+        memcpy(lastSwitchPackets[currentIndex], bytes, header->len);
+
+        //add src mac to mac table
+        int found = 0;
+        for(int i=0; i<macTableSize; i++){
+            if(macTable[currentIndex][i] == NULL)
+                continue;
+            if(memcmp(macTable[currentIndex][i], ethh->h_source, 6) == 0){
+                found = 1;
+                break;
+            }
+        }
+        if(!found){
+            memcpy(macTable[currentIndex][macIndices[currentIndex]], ethh->h_source, 6);
+            macIndices[currentIndex] = (macIndices[currentIndex] + 1)%macTableSize;
+        }
+        
+        //find right interface to send it on
+        int targetIndex = -1;
+        for(int i=0; i<n && targetIndex < 0; i++){
+            if(i==currentIndex)
+                continue;
+            for(int j=0; j<macTableSize; j++){
+                if(memcmp(macTable[i][j], ethh->h_dest, 6) == 0){
+                    targetIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if(targetIndex >= 0)
+            write(socks[targetIndex], bytes, header->len);
+        else
+            for(int i=0; i<n; i++)
+                if(i==currentIndex)
+                    continue;
+                else
+                    write(socks[i], bytes, header->len);
+    }
+}
+
+void dumpMacTable(){
+    for(int i=0; i<n; i++){
+        printf("interface %s:\n", names[i]);
+        for(int j=0; j<macTableSize; j++){
+            int isnull = 1;
+            for(int k=0; k<6; k++){
+                if(macTable[i][j][k] != 0){
+                    isnull = 0;
+                    break;
+                }
+            }
+            if(isnull)
+                continue;
+
+            printf("%.2X", macTable[i][j][0]);
+            for(int k=1; k<6; k++)
+                printf(":%.2X", macTable[i][j][k]);
+            printf("\n");
+        }
+        printf("\n");
+    }
 }
 
 void *senderThread(void *arg){
@@ -310,6 +390,7 @@ int main(int argc, char ** argv){
     portCost = 20000;
     priority = 0x80;
     extension = 0x01;
+    macTableSize = 30;
 
     //configure globals
     int c=1;
@@ -323,6 +404,8 @@ int main(int argc, char ** argv){
             priority = atoi(argv[++c]);
         }else if(strcmp(argv[c], "-e") == 0){
             extension = atoi(argv[++c]);
+        }else if(strcmp(argv[c], "-ms") == 0){
+            macTableSize = atoi(argv[++c]);
         }
     }
 
@@ -332,6 +415,10 @@ int main(int argc, char ** argv){
     n = argc - c;
     names = (char **) calloc(n, sizeof(char*));
     neighbours = (unsigned char **) calloc(n, sizeof(char*));
+    interfaces = (unsigned char **) calloc(n, sizeof(char*));
+    macTable = (unsigned char ***) calloc(n, sizeof(char**));
+    macIndices = (int *) calloc(n, sizeof(int));
+    lastSwitchPackets = (unsigned char **) calloc(n, sizeof(char*));
     states = (PortState *) calloc(n, sizeof(PortState));
     timestamps = (time_t *) calloc(n, sizeof(time_t));
     socks = (int *) calloc(n, sizeof(int));
@@ -339,6 +426,11 @@ int main(int argc, char ** argv){
         names[i] = (char *) calloc(strlen(argv[c+i]), sizeof(char));
         strcpy(names[i], argv[c+i]);
         neighbours[i] = (unsigned char *) calloc(6, sizeof(char));
+        interfaces[i] = (unsigned char *) calloc(6, sizeof(char));
+        macTable[i] = (unsigned char **) calloc(30, sizeof(char **));
+        lastSwitchPackets[i] = (unsigned char*) calloc(65536, sizeof(char *));
+        for(int j=0; j<macTableSize; j++)
+            macTable[i][j] = (unsigned char *) calloc(6,sizeof(char));
         for(int j=0; j<6; j++)
             neighbours[i][j] = 0xff;
         timestamps[i] = 0;
@@ -350,10 +442,11 @@ int main(int argc, char ** argv){
 
     pthread_t ifaceThreads[n];
     for(int i=0; i<n; i++){
-        if(create_socket(argv[c+i], socks+i, bridgeId) < 0){
+        if(create_socket(argv[c+i], socks+i, interfaces[i]) < 0){
             perror("could not create socket"); return -1;
         }
     }
+    bridgeId = interfaces[0];
 
     //configure default root
     pthread_mutex_lock(&ifaceMutex);
@@ -361,9 +454,10 @@ int main(int argc, char ** argv){
     firstTcTime = time(0);
     rootPriority = priority;
     rootExtension = extension;
-    messageAge = 0;pthread_mutex_unlock(&ifaceMutex);
+    messageAge = 0;
     rootPathCost = 0;
-
+    pthread_mutex_unlock(&ifaceMutex);
+    
     int indices[n];
     for(int i=0; i<n; i++){
         indices[i] = i;
@@ -397,9 +491,15 @@ int main(int argc, char ** argv){
     for(int i=0; i<n; i++){
         free(names[i]);
         free(neighbours[i]);
+        free(interfaces[i]);
+        for(int j=0; j<macTableSize; j++)
+            free(macTable[i][j]);
+        free(macTable[i]);
     }
     free(names);
     free(neighbours);
+    free(interfaces);
+    free(macTable);
     free(states);
     free(timestamps);
     free(socks);

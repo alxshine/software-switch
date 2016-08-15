@@ -4,40 +4,65 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.9~svn20110310	//
-BLOCKING	stp.c	/^    BLOCKING } PortState;$/;"	e	enum:port_state	file:
+BINDIR	Makefile	/^BINDIR=bin$/;"	m
+BLOCKING	src/stp.c	/^    BLOCKING } PortState;$/;"	e	enum:port_state	file:
 CC	Makefile	/^CC=gcc$/;"	m
 CFLAGS	Makefile	/^CFLAGS=-Werror -Wall -g$/;"	m
-DEDICATED	stp.c	/^    DEDICATED,$/;"	e	enum:port_state	file:
+CNF	inc/utils.h	/^    CNF$/;"	e	enum:bpdu_types
+DEDICATED	src/stp.c	/^    DEDICATED,$/;"	e	enum:port_state	file:
+DirectoryOfThisScript	.ycm_extra_conf.py	/^def DirectoryOfThisScript():$/;"	f
+FlagsForFile	.ycm_extra_conf.py	/^def FlagsForFile( filename, **kwargs ):$/;"	f
+GetCompilationInfoForFile	.ycm_extra_conf.py	/^def GetCompilationInfoForFile( filename ):$/;"	f
+IsHeaderFile	.ycm_extra_conf.py	/^def IsHeaderFile( filename ):$/;"	f
 LIBS	Makefile	/^LIBS=-lpcap -pthread$/;"	m
-PortState	stp.c	/^    BLOCKING } PortState;$/;"	t	typeref:enum:port_state	file:
-ROOT	stp.c	/^    ROOT,$/;"	e	enum:port_state	file:
-bridgeId	stp.c	/^unsigned char bridgeId[6];$/;"	v
-create_socket	stp.c	/^int create_socket(char *device, int *sockfd, unsigned char *mac){$/;"	f
-extension	stp.c	/^unsigned char priority, extension;$/;"	v
-firstTcTime	stp.c	/^time_t firstTcTime;$/;"	v
-forwardDelay	stp.c	/^int forwardDelay;$/;"	v
-generateSTP	stp.c	/^void generateSTP(unsigned char *packet, unsigned char *btype, unsigned char *bflags, unsigned char *port, unsigned char *max, unsigned char *hlt, unsigned char *fwd, int padding){$/;"	f
-hadTc	stp.c	/^int hadTc;$/;"	v
-helloTime	stp.c	/^int helloTime;$/;"	v
-ifaceMutex	stp.c	/^pthread_mutex_t ifaceMutex;$/;"	v
-interFaceThread	stp.c	/^void *interFaceThread(void *arg){$/;"	f
-main	stp.c	/^int main(int argc, char ** argv){$/;"	f
-maxAge	stp.c	/^int maxAge;$/;"	v
-messageAge	stp.c	/^unsigned short messageAge;$/;"	v
-n	stp.c	/^int n;$/;"	v
-names	stp.c	/^char **names;$/;"	v
-neighbours	stp.c	/^unsigned char **neighbours;$/;"	v
-portCost	stp.c	/^int portCost;$/;"	v
-port_state	stp.c	/^typedef enum port_state {$/;"	g	file:
-priority	stp.c	/^unsigned char priority, extension;$/;"	v
-processPacket	stp.c	/^void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char *bytes){$/;"	f
-root	stp.c	/^unsigned char root[6];$/;"	v
-rootExtension	stp.c	/^unsigned char rootPriority, rootExtension;$/;"	v
-rootPathCost	stp.c	/^int rootPathCost;$/;"	v
-rootPriority	stp.c	/^unsigned char rootPriority, rootExtension;$/;"	v
-sendSTP	stp.c	/^void sendSTP(int index){$/;"	f
-senderThread	stp.c	/^void *senderThread(void *arg){$/;"	f
-socks	stp.c	/^int *socks;$/;"	v
-states	stp.c	/^PortState *states;$/;"	v
-timestamps	stp.c	/^time_t *timestamps;$/;"	v
-updatePortStates	stp.c	/^void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rootMac, unsigned int pathCost, unsigned char age, unsigned char bPriority, unsigned char bExtension){$/;"	f
+MakeRelativePathsInFlagsAbsolute	.ycm_extra_conf.py	/^def MakeRelativePathsInFlagsAbsolute( flags, working_directory ):$/;"	f
+OBJDIR	Makefile	/^OBJDIR=obj$/;"	m
+PortState	src/stp.c	/^    BLOCKING } PortState;$/;"	t	typeref:enum:port_state	file:
+ROOT	src/stp.c	/^    ROOT,$/;"	e	enum:port_state	file:
+SOURCE_EXTENSIONS	.ycm_extra_conf.py	/^SOURCE_EXTENSIONS = [ '.cpp', '.cxx', '.cc', '.c', '.m', '.mm' ]$/;"	v
+SRCDIR	Makefile	/^SRCDIR=src$/;"	m
+TCN	inc/utils.h	/^    TCN,$/;"	e	enum:bpdu_types
+bpdu_types	inc/utils.h	/^typedef enum bpdu_types {$/;"	g
+bridgeId	src/stp.c	/^unsigned char *bridgeId;$/;"	v
+compareBridges	src/stp.c	/^int compareBridges(unsigned char aPrio, unsigned char aExt, unsigned char *aMac, unsigned char bPrio, unsigned char bExt, unsigned char *bMac){$/;"	f
+compilation_database_folder	.ycm_extra_conf.py	/^compilation_database_folder = ''$/;"	v
+create_socket	inc/utils.h	/^int create_socket(char *device, int *sockfd, unsigned char *mac){$/;"	f
+create_socket	src/stp.c	/^int create_socket(char *device, int *sockfd, unsigned char *mac){$/;"	f
+database	.ycm_extra_conf.py	/^  database = None$/;"	v
+database	.ycm_extra_conf.py	/^  database = ycm_core.CompilationDatabase( compilation_database_folder )$/;"	v
+dumpMacTable	src/stp.c	/^void dumpMacTable(){$/;"	f
+extension	src/stp.c	/^unsigned char priority, extension;$/;"	v
+firstTcTime	src/stp.c	/^time_t firstTcTime;$/;"	v
+flags	.ycm_extra_conf.py	/^flags = [$/;"	v
+forwardDelay	src/stp.c	/^int forwardDelay;$/;"	v
+generateSTP	inc/utils.h	/^void generateSTP(unsigned char *packet, bpdu_type btype, int tc, int ta, short port_id, int root_path_cost, short message_age, short max_age, short hello_time, short forward_delay, int padding){$/;"	f
+generateSTP	src/stp.c	/^void generateSTP(unsigned char *packet, unsigned char *btype, unsigned char *bflags, unsigned char *port, int padding){$/;"	f
+hadTc	src/stp.c	/^int hadTc;$/;"	v
+helloTime	src/stp.c	/^int helloTime;$/;"	v
+ifaceMutex	src/stp.c	/^pthread_mutex_t ifaceMutex;$/;"	v
+interFaceThread	src/stp.c	/^void *interFaceThread(void *arg){$/;"	f
+interfaces	src/stp.c	/^unsigned char **interfaces;$/;"	v
+lastSwitchPacket	src/stp.c	/^unsigned char *lastSwitchPacket;$/;"	v
+macIndices	src/stp.c	/^int *macIndices;$/;"	v
+macTable	src/stp.c	/^unsigned char ***macTable;$/;"	v
+macTableSize	src/stp.c	/^int macTableSize;$/;"	v
+main	src/stp.c	/^int main(int argc, char ** argv){$/;"	f
+maxAge	src/stp.c	/^int maxAge;$/;"	v
+messageAge	src/stp.c	/^unsigned short messageAge;$/;"	v
+n	src/stp.c	/^int n;$/;"	v
+names	src/stp.c	/^char **names;$/;"	v
+neighbours	src/stp.c	/^unsigned char **neighbours;$/;"	v
+portCost	src/stp.c	/^int portCost;$/;"	v
+port_state	src/stp.c	/^typedef enum port_state {$/;"	g	file:
+priority	src/stp.c	/^unsigned char priority, extension;$/;"	v
+processPacket	src/stp.c	/^void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char *bytes){$/;"	f
+root	src/stp.c	/^unsigned char root[6];$/;"	v
+rootExtension	src/stp.c	/^unsigned char rootPriority, rootExtension;$/;"	v
+rootPathCost	src/stp.c	/^int rootPathCost;$/;"	v
+rootPriority	src/stp.c	/^unsigned char rootPriority, rootExtension;$/;"	v
+sendSTP	src/stp.c	/^void sendSTP(int index){$/;"	f
+senderThread	src/stp.c	/^void *senderThread(void *arg){$/;"	f
+socks	src/stp.c	/^int *socks;$/;"	v
+states	src/stp.c	/^PortState *states;$/;"	v
+timestamps	src/stp.c	/^time_t *timestamps;$/;"	v
+updatePortStates	src/stp.c	/^void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned char age, unsigned char bPriority, unsigned char bExtension){$/;"	f

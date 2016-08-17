@@ -142,6 +142,7 @@ int compareBridges(unsigned char aPrio, unsigned char aExt, unsigned char *aMac,
 
 void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned char age, unsigned char bPriority, unsigned char bExtension){
     pthread_mutex_lock(&ifaceMutex);
+
     //check for a root change
     if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) < 0){
         memcpy(root, rMac, 6);
@@ -149,10 +150,6 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
         rootExtension = rExtension;
         rootPathCost = pathCost + portCost;
         messageAge = age;
-
-        for(int i=0; i<n; i++)
-            if(states[i] == ROOT)
-                states[i] = DEDICATED;
 
         states[currentIndex] = ROOT;
     }
@@ -169,12 +166,12 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
     }
 
     //if a port is in the BLOCKING state but shouldn't be, change it
-    if(states[currentIndex] == BLOCKING){
+    if(states[currentIndex] == BLOCKING || states[currentIndex] == ROOT){
         //if our root is the correct one, set the port to dedicated
         if(compareBridges(rootPriority, rootExtension, root, rPriority, rExtension, rMac) < 0)
             states[currentIndex] = DEDICATED;
 
-        //if we have the same root, but we have should be preferred, make us root
+        //if we have the same root, but have should be preferred, make us root
         if(compareBridges(rootPriority, rootExtension, root, rPriority, rExtension, rMac) == 0 &&
             (rootPathCost < pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) < 0)))
                 states[currentIndex] = DEDICATED;
@@ -182,7 +179,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
 
     //if a port should is DEDICATED but shouldn't be, change it
     //only possibility should be same root different path cost
-    if(states[currentIndex] == DEDICATED && rootPathCost > pathCost + portCost)
+    if(states[currentIndex] == DEDICATED && rootPathCost >= pathCost + portCost)
         states[currentIndex] = BLOCKING;
 
     pthread_mutex_unlock(&ifaceMutex);
@@ -319,7 +316,8 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
                 if(i==currentIndex)
                     continue;
                 else
-                    write(socks[i], bytes, header->len);
+                    if(states[i] == DEDICATED)
+                        write(socks[i], bytes, header->len);
     }
 }
 

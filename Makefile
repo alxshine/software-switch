@@ -10,7 +10,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 all: $(OBJDIR)/stp.o
-	[ -d $(SRCDIR) ] || mkdir $(SRCDIR)
+	[ -d $(BINDIR) ] || mkdir $(BINDIR)
 	$(CC) $(CFLAGS) $< $(LIBS) -o $(BINDIR)/switch
 
 .PHONY:

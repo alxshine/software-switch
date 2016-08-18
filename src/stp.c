@@ -108,7 +108,7 @@ void generateSTP(unsigned char *packet, unsigned char *btype, unsigned char *bfl
 void sendSTP(int index){
     pthread_mutex_lock(&ifaceMutex);
     //bpdu types
-//    unsigned char tcn[1] = { 0x80 };
+    //    unsigned char tcn[1] = { 0x80 };
     unsigned char cnf[1] = { 0x00 };
 
     //flags
@@ -122,10 +122,9 @@ void sendSTP(int index){
     unsigned char flags[1] = { 0 };
     if(firstTcTime + forwardDelay > time(0))
         flags[0] += tcf[0];
-    
+
     generateSTP(packet, cnf, flags, prt, 4);
     write(socks[index], packet, 64);
-    timestamps[index] = time(0);     
     pthread_mutex_unlock(&ifaceMutex);
 
 }
@@ -146,9 +145,9 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
     //check for a root change
     if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) < 0){
         memcpy(root, rMac, 6);
-        rootPriority = ntohs(rPriority);
-        rootExtension = ntohs(rExtension);
-        rootPathCost = ntohl(pathCost) + portCost;
+        rootPriority = rPriority;
+        rootExtension = rExtension;
+        rootPathCost = pathCost + portCost;
         messageAge = ntohs(age);
 
         for(int i=0; i<n; i++)
@@ -195,6 +194,11 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
 
     int currentIndex = *(int *) user;
    
+    pthread_mutex_lock(&ifaceMutex);
+    for(int i=0; i<n; i++)
+        if(timestamps[i] + forwardDelay < time(0))
+            states[i] = DEDICATED;
+    pthread_mutex_unlock(&ifaceMutex);
 
     char buffer[17];
     sprintf(buffer,"%.2X:%.2X:%.2X:%.2X:%.2X:%.2X", ethh->h_dest[0], ethh->h_dest[1], ethh->h_dest[2], ethh->h_dest[3], ethh->h_dest[4], ethh->h_dest[5]);
@@ -241,7 +245,7 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         psize-=6;
 
         //root path cost (4 bytes)
-        int pathCost = *(int*) payload;
+        int pathCost = ntohs(*(int*) payload);
         payload+=4;
         psize-=4;
 
@@ -263,11 +267,12 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         psize-=2;
 
         //next 2 bytes is message age
-        short age = *(short *) payload;
+        short age = ntohs(*(short *) payload);
         
         payload+=2;
         psize-=2;
     
+        timestamps[currentIndex] = time(0);
         updatePortStates(currentIndex, rPriority, rExtension, rootMac, pathCost, age, bPriority, bExtension);
     }else{
         //handle non-stp packets here

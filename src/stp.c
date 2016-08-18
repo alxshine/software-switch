@@ -156,6 +156,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
 
         states[currentIndex] = ROOT;
     }
+    printf("interface %s: our rpc is %d, their rpc is %d\n", names[currentIndex], rootPathCost, pathCost);
 
     //check if we would be the correct root
     if(compareBridges(priority, extension, bridgeId, rootPriority, rootExtension, root) < 0){

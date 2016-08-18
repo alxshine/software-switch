@@ -195,9 +195,21 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
     int currentIndex = *(int *) user;
    
     pthread_mutex_lock(&ifaceMutex);
-    for(int i=0; i<n; i++)
+    int hasRoot = 0;
+    for(int i=0; i<n; i++){
         if(timestamps[i] + forwardDelay < time(0))
             states[i] = DEDICATED;
+        if(states[i] == ROOT)
+            hasRoot = 1;
+    }
+    if(!hasRoot){
+        memcpy(root, bridgeId, 6);
+        rootPriority = priority;
+        rootExtension = extension;
+        rootPathCost = 0;
+        for(int i=0; i<n; i++)
+            states[i] = DEDICATED;
+    }
     pthread_mutex_unlock(&ifaceMutex);
 
     char buffer[17];

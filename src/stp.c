@@ -143,7 +143,8 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
     pthread_mutex_lock(&ifaceMutex);
 
     //check for a root change
-    if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) < 0){
+    if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) < 0 ||
+            (compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) == 0 && pathCost + portCost < rootPathCost)){
         memcpy(root, rMac, 6);
         rootPriority = rPriority;
         rootExtension = rExtension;
@@ -171,13 +172,11 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
 
     //if a port is in the BLOCKING state but shouldn't be, change it
     if(states[currentIndex] == BLOCKING || states[currentIndex] == ROOT){
-
-
         //if our root is the correct one, set the port to dedicated
         if(compareBridges(rootPriority, rootExtension, root, rPriority, rExtension, rMac) < 0)
             states[currentIndex] = DEDICATED;
 
-        //if we have the same root, but have should be preferred, make us root
+        //if we have the same root, but have should be preferred, change to DEDICATED
         if(compareBridges(rootPriority, rootExtension, root, rPriority, rExtension, rMac) == 0 &&
             (rootPathCost < pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) < 0)))
                 states[currentIndex] = DEDICATED;
@@ -189,7 +188,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
         //only change if the neighbour has the same root (smaller root is handled by root change, larger root is ignored -> stay DEDICATED)
         if(compareBridges(rPriority, rExtension, rMac, priority, extension, root) == 0)
             //even then only change to BLOCKING if they have a shorter path or should be preferred
-            if(rootPathCost >= pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) >= 0))
+            if(rootPathCost >= pathCost + portCost || ((rootPathCost == pathCost + portCost) && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) >= 0))
                 states[currentIndex] = BLOCKING;
     }
 

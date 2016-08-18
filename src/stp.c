@@ -146,10 +146,14 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
     //check for a root change
     if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) < 0){
         memcpy(root, rMac, 6);
-        rootPriority = rPriority;
-        rootExtension = rExtension;
-        rootPathCost = pathCost + portCost;
-        messageAge = age;
+        rootPriority = ntohs(rPriority);
+        rootExtension = ntohs(rExtension);
+        rootPathCost = ntohl(pathCost) + portCost;
+        messageAge = ntohs(age);
+
+        for(int i=0; i<n; i++)
+            if(states[i] == ROOT)
+                states[i] = DEDICATED;
 
         states[currentIndex] = ROOT;
     }
@@ -179,7 +183,8 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
 
     //if a port should is DEDICATED but shouldn't be, change it
     //only possibility should be same root different path cost
-    if(states[currentIndex] == DEDICATED && rootPathCost >= pathCost + portCost)
+    if(states[currentIndex] == DEDICATED && 
+            (rootPathCost >= pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) >= 0)))
         states[currentIndex] = BLOCKING;
 
     pthread_mutex_unlock(&ifaceMutex);

@@ -12,3 +12,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 all: $(OBJDIR)/stp.o
 	[ -d $(SRCDIR) ] || mkdir $(SRCDIR)
 	$(CC) $(CFLAGS) $< $(LIBS) -o $(BINDIR)/switch
+
+.PHONY:
+clean:
+	rm -r bin obj

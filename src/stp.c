@@ -185,9 +185,13 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
 
     //if a port should is DEDICATED but shouldn't be, change it
     //only possibility should be same root different path cost
-    if(states[currentIndex] == DEDICATED && 
-            (rootPathCost >= pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) >= 0)))
-        states[currentIndex] = BLOCKING;
+    if(states[currentIndex] == DEDICATED){
+        //only change if the neighbour has the same root (smaller root is handled by root change, larger root is ignored -> stay DEDICATED)
+        if(compareBridges(rPriority, rExtension, rMac, priority, extension, root) == 0)
+            //even then only change to BLOCKING if they have a shorter path or should be preferred
+            if(rootPathCost >= pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) >= 0))
+                states[currentIndex] = BLOCKING;
+    }
 
     pthread_mutex_unlock(&ifaceMutex);
 }

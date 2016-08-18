@@ -171,6 +171,8 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
 
     //if a port is in the BLOCKING state but shouldn't be, change it
     if(states[currentIndex] == BLOCKING || states[currentIndex] == ROOT){
+
+
         //if our root is the correct one, set the port to dedicated
         if(compareBridges(rootPriority, rootExtension, root, rPriority, rExtension, rMac) < 0)
             states[currentIndex] = DEDICATED;
@@ -258,7 +260,7 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         psize-=6;
 
         //root path cost (4 bytes)
-        int pathCost = ntohs(*(int*) payload);
+        int pathCost = ntohl(*(int*) payload);
         payload+=4;
         psize-=4;
 

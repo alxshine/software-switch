@@ -92,10 +92,10 @@ void generateSTP(unsigned char *packet, unsigned char *btype, unsigned char *bfl
 
     //prepare variables for network byte order
     int netPath = htonl(rootPathCost);
-    short netAge = htons(messageAge);
-    short netMax = htons(maxAge);
-    short netHlt = htons(helloTime);
-    short netFwd = htons(forwardDelay);
+    short netAge = messageAge;
+    short netMax = maxAge;
+    short netHlt = helloTime;
+    short netFwd = forwardDelay;
 
     unsigned char *ptrs[] = {dst, bridgeId, len, llc, pid, vid, btype, bflags, &rootPriority, &rootExtension, root, (unsigned char *) &netPath, &priority, &extension, bridgeId, port, (unsigned char *) &netAge, (unsigned char *) &netMax, (unsigned char *) &netHlt, (unsigned char *) &netFwd};
     int sizes[] = {6, 6, 2, 3, 2, 1, 1, 1, 1, 1, 6, 4, 1, 1, 6, 2, 2, 2, 2, 2};
@@ -114,7 +114,7 @@ void sendSTP(int index){
 
     //flags
     unsigned char tcf[1] = { 0x01 };
-    //unsigned char taf[1] = { 0xf0 };
+    unsigned char taf[1] = { 0xf0 };
     //stp identifiers
     unsigned char prt[2] = { 0x80, 0x01 };
 
@@ -123,11 +123,38 @@ void sendSTP(int index){
     unsigned char flags[1] = { 0 };
     if(firstTcTime + forwardDelay > time(0))
         flags[0] += tcf[0];
+    if(tca)
+        flags[0] += taf[0];
 
     generateSTP(packet, cnf, flags, prt, 4);
     write(socks[index], packet, 64);
     pthread_mutex_unlock(&ifaceMutex);
 
+}
+
+//requires the ifaceMutex to be held
+void sendTCN(int index){
+    unsigned char dst[6] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
+    unsigned char len[2] = { 0x00, 0x07 };
+    unsigned char llc[3] = { 0x42, 0x42, 0x03 };
+
+    unsigned char proto[2] = { 0, 0 };
+    unsigned char version[1] = { 0 };
+    unsigned char type[1] = { 0x80 };
+
+    unsigned char packet[64];
+    unsigned char *ptrs[] = {dst, bridgeId, len, llc, proto, version, type};
+    int sizes[] = {6, 6, 2, 3, 2, 1, 3};
+    int offset = 0;
+    for(int i=0; i<sizeof(ptrs)/sizeof(unsigned char*); i++){
+        memcpy(packet+offset, ptrs[i], sizes[i]);
+        offset += sizes[i];
+    }
+    for(; offset<64; offset++)
+        packet[offset] = 0;
+
+    write(socks[index], packet, 64);
+    printf("sending tcn\n");
 }
 
 int compareBridges(unsigned char aPrio, unsigned char aExt, unsigned char *aMac, unsigned char bPrio, unsigned char bExt, unsigned char *bMac){
@@ -157,6 +184,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
                 states[i] = DEDICATED;
 
         states[currentIndex] = ROOT;
+        sendTCN(currentIndex);
     }
 
     //check if we would be the correct root
@@ -282,9 +310,8 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         unsigned char bExtension = *payload++;
         psize-=2;
         //next 6 bytes is the bridge mac address
-        pthread_mutex_lock(&ifaceMutex);
-        memcpy(neighbours[currentIndex], payload, 6);
-        pthread_mutex_unlock(&ifaceMutex);
+        unsigned char bridgeMac[6];
+        memcpy(bridgeMac, payload, 6);
         payload+=6;
         psize-=6;
 
@@ -298,6 +325,25 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         
         payload+=2;
         psize-=2;
+
+        //check for tcn packages
+        int nonNull = 0;
+        for(int i=0; i<6; i++){
+            if(rootMac[i] != 0 || bridgeMac[i] != 0){
+                nonNull = 1;
+                break;
+            }
+        }
+        //tcn package
+        if(!nonNull){
+            tca = 1;
+            return;
+        }else{
+            tca = 0;
+            pthread_mutex_lock(&ifaceMutex);
+            memcpy(neighbours[currentIndex], payload, 6);
+            pthread_mutex_unlock(&ifaceMutex);
+        }
     
         timestamps[currentIndex] = time(0);
         updatePortStates(currentIndex, rPriority, rExtension, rootMac, pathCost, age, bPriority, bExtension);

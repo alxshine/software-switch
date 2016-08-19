@@ -317,6 +317,14 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
 
         memcpy(lastSwitchPackets[currentIndex], bytes, header->len);
 
+        //send multicasts on every dedicated interface
+        if((ethh->h_dest[0] & 1) != 0){
+            for(int i=0; i<n; i++)
+                if(i != currentIndex && states[i] == DEDICATED)
+                    write(socks[i], bytes, header->len);
+            return;
+        }
+
         //add src mac to mac table
         int found = 0;
         for(int i=0; i<macTableSize; i++){
@@ -331,6 +339,10 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
             memcpy(macTable[currentIndex][macIndices[currentIndex]], ethh->h_source, 6);
             macIndices[currentIndex] = (macIndices[currentIndex] + 1)%macTableSize;
         }
+
+        //check if the receiving interface is the intended target
+        if(memcmp(ethh->h_dest, interfaces[currentIndex], 6) == 0)
+            return;
         
         //find right interface to send it on
         int targetIndex = -1;
@@ -354,14 +366,17 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
                 if(states[rootIndex] == ROOT)
                     break;
 
+            //if we have a root, forward it to that port
             if(rootIndex<n)
                 write(socks[rootIndex], bytes, header->len);
-            for(int i=0; i<n; i++)
-                if(i==currentIndex)
-                    continue;
-                else
-                    if(states[i] == DEDICATED)
-                        write(socks[i], bytes, header->len);
+            //otherwise send on every dedicated port
+            else
+                for(int i=0; i<n; i++)
+                    if(i==currentIndex)
+                        continue;
+                    else
+                        if(states[i] == DEDICATED)
+                            write(socks[i], bytes, header->len);
         }
     }
 }

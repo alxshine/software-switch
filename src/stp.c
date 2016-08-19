@@ -347,13 +347,22 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
 
         if(targetIndex >= 0)
             write(socks[targetIndex], bytes, header->len);
-        else
+        else{
+            //check if we have a root
+            int rootIndex = 0;
+            for(; rootIndex<n; rootIndex++)
+                if(states[rootIndex] == ROOT)
+                    break;
+
+            if(rootIndex<n)
+                write(socks[rootIndex], bytes, header->len);
             for(int i=0; i<n; i++)
                 if(i==currentIndex)
                     continue;
                 else
                     if(states[i] == DEDICATED)
                         write(socks[i], bytes, header->len);
+        }
     }
 }
 

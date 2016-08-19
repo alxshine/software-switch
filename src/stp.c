@@ -38,6 +38,7 @@ time_t *timestamps;
 int *socks;
 time_t firstTcTime;
 int hadTc;
+int tca;
 int rootPathCost;
 unsigned char root[6];
 unsigned char rootPriority, rootExtension;
@@ -149,7 +150,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
         rootPriority = rPriority;
         rootExtension = rExtension;
         rootPathCost = pathCost + portCost;
-        messageAge = age;
+        messageAge = age+1;
 
         for(int i=0; i<n; i++)
             if(states[i] == ROOT)

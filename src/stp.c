@@ -170,14 +170,14 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
     }
 
     //if a port is in the BLOCKING state but shouldn't be, change it
-    if(states[currentIndex] == BLOCKING || states[currentIndex] == ROOT){
+    if(states[currentIndex] == BLOCKING){
         //if our root is the correct one, set the port to dedicated
         if(compareBridges(rootPriority, rootExtension, root, rPriority, rExtension, rMac) < 0)
             states[currentIndex] = DEDICATED;
 
         //if we have the same root, but have should be preferred, change to DEDICATED
         if(compareBridges(rootPriority, rootExtension, root, rPriority, rExtension, rMac) == 0 &&
-            (rootPathCost < pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) < 0)))
+            (rootPathCost < pathCost || (rootPathCost == pathCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) < 0)))
                 states[currentIndex] = DEDICATED;
     }
 
@@ -185,9 +185,10 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
     //only possibility should be same root different path cost
     if(states[currentIndex] == DEDICATED){
         //only change if the neighbour has the same root (smaller root is handled by root change, larger root is ignored -> stay DEDICATED)
+        //note that here we have a rootPathCost == pathCost (without adding the portcost). This is because here we are interested in whether or not they have the same distance to the root.
         if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) == 0)
             //even then only change to BLOCKING if they have a shorter path or should be preferred
-            if(rootPathCost > pathCost + portCost || (rootPathCost == pathCost + portCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) > 0))
+            if(rootPathCost > pathCost || (rootPathCost == pathCost && compareBridges(priority, extension, bridgeId, bPriority, bExtension, neighbours[currentIndex]) > 0))
                 states[currentIndex] = BLOCKING;
     }
 

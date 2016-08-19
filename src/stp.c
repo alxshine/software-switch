@@ -149,7 +149,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
         rootPriority = rPriority;
         rootExtension = rExtension;
         rootPathCost = pathCost + portCost;
-        messageAge = ntohs(age);
+        messageAge = age;
 
         for(int i=0; i<n; i++)
             if(states[i] == ROOT)
@@ -208,7 +208,14 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         if(states[i] == ROOT)
             hasRoot = 1;
     }
-    if(!hasRoot){
+    //this is a workaround for the root reset issue
+    //this problem would never resolve on its own, but this workaround fixes it after one helloTime
+    int rootNonNull = 0;
+    for(int i=0; i<6; i++)
+        if(root[i] != 0)
+            rootNonNull = 1;
+
+    if(!hasRoot || !rootNonNull){
         memcpy(root, bridgeId, 6);
         rootPriority = priority;
         rootExtension = extension;
@@ -216,6 +223,7 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         for(int i=0; i<n; i++)
             states[i] = DEDICATED;
     }
+
     pthread_mutex_unlock(&ifaceMutex);
 
     char buffer[17];

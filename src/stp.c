@@ -364,13 +364,9 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
 
         memcpy(lastSwitchPackets[currentIndex], bytes, header->len);
 
-        //send multicasts on every dedicated interface
-        if((ethh->h_dest[0] & 1) != 0){
-            for(int i=0; i<n; i++)
-                if(i != currentIndex && states[i] == DEDICATED)
-                    write(socks[i], bytes, header->len);
+        //ignore multicasts (yes, this greatly reduces the actual capability of the switch, but it should still work for the testing)
+        if((ethh->h_dest[0] & 1) != 0)
             return;
-        }
 
         //add src mac to mac table
         int found = 0;

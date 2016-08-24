@@ -364,10 +364,6 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
 
         memcpy(lastSwitchPackets[currentIndex], bytes, header->len);
 
-        //ignore multicasts (yes, this greatly reduces the actual capability of the switch, but it should still work for the testing)
-        if((ethh->h_dest[0] & 1) != 0)
-            return;
-
         //add src mac to mac table
         int found = 0;
         for(int i=0; i<macTableSize; i++){
@@ -399,27 +395,21 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
                 }
             }
         }
+        
+        if(targetIndex < 0 || ethh->h_dest[0] & 1){
+            //if the packet was received on a blocking interface it is travelling sideways
+            //and needs to be stopped
+            if(states[currentIndex] == BLOCKING)
+                return;
 
-        if(targetIndex >= 0)
+            //we don't know where to send it
+            //this sends the packet via all dedicated ports and the root if it is going up (coming from a dedicated port)
+            //and all dedicated ports if it is going down (coming from the root port)
+            for(int i=0; i<n; i++)
+                if(i!=currentIndex && states[i] != BLOCKING)
+                    write(socks[i], bytes, header->len);
+        }else{
             write(socks[targetIndex], bytes, header->len);
-        else{
-            //check if we have a root
-            int rootIndex = 0;
-            for(; rootIndex<n; rootIndex++)
-                if(states[rootIndex] == ROOT)
-                    break;
-
-            //if we have a root, forward it to that port
-            if(rootIndex<n)
-                write(socks[rootIndex], bytes, header->len);
-            //otherwise send on every dedicated port
-            else
-                for(int i=0; i<n; i++)
-                    if(i==currentIndex)
-                        continue;
-                    else
-                        if(states[i] == DEDICATED)
-                            write(socks[i], bytes, header->len);
         }
     }
 }

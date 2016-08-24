@@ -358,11 +358,13 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
 
         //skip packets sent by another interface listener
         for(int i=0; i<numPackages; i++)
-            if(memcmp(sentPackages[i], bytes, header->len) == 0)
+            if(sentPackages[i] != 0 && memcmp(sentPackages[i], bytes, header->len) == 0)
                 return;
 
+        printf("packageIndex: %d, header->len: %d\n", packageIndex, header->len);
         memcpy(sentPackages[packageIndex], bytes, header->len);
         packageIndex = (packageIndex+1)%numPackages;
+        printf("copy passed\n");
 
         //add src mac to mac table
         int found = 0;
@@ -521,7 +523,6 @@ int main(int argc, char ** argv){
         neighbours[i] = (unsigned char *) calloc(6, sizeof(char));
         interfaces[i] = (unsigned char *) calloc(6, sizeof(char));
         macTable[i] = (unsigned char **) calloc(30, sizeof(char **));
-        sentPackages[i] = (unsigned char*) calloc(65536, sizeof(char *));
         for(int j=0; j<macTableSize; j++)
             macTable[i][j] = (unsigned char *) calloc(6,sizeof(char));
         for(int j=0; j<6; j++)
@@ -529,6 +530,8 @@ int main(int argc, char ** argv){
         timestamps[i] = 0;
         states[i] = DEDICATED;
     }
+    for(int i=0; i<numPackages; i++)
+        sentPackages[i] = (unsigned char*) calloc(65536, sizeof(char *));
 
     //initialize mutex
     pthread_mutex_init(&ifaceMutex, NULL);

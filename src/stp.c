@@ -361,7 +361,8 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
             if(memcmp(sentPackages[i], bytes, header->len) == 0)
                 return;
 
-        memcpy(sentPackages[packageIndex++], bytes, header->len);
+        memcpy(sentPackages[packageIndex], bytes, header->len);
+        packageIndex = (packageIndex+1)%numPackages;
 
         //add src mac to mac table
         int found = 0;

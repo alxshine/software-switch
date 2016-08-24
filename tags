@@ -42,7 +42,6 @@ helloTime	src/stp.c	/^int helloTime;$/;"	v
 ifaceMutex	src/stp.c	/^pthread_mutex_t ifaceMutex;$/;"	v
 interFaceThread	src/stp.c	/^void *interFaceThread(void *arg){$/;"	f
 interfaces	src/stp.c	/^unsigned char **interfaces;$/;"	v
-lastSwitchPacket	src/stp.c	/^unsigned char *lastSwitchPacket;$/;"	v
 macIndices	src/stp.c	/^int *macIndices;$/;"	v
 macTable	src/stp.c	/^unsigned char ***macTable;$/;"	v
 macTableSize	src/stp.c	/^int macTableSize;$/;"	v
@@ -52,6 +51,7 @@ messageAge	src/stp.c	/^unsigned short messageAge;$/;"	v
 n	src/stp.c	/^int n;$/;"	v
 names	src/stp.c	/^char **names;$/;"	v
 neighbours	src/stp.c	/^unsigned char **neighbours;$/;"	v
+numPackages	src/stp.c	/^int numPackages;$/;"	v
 portCost	src/stp.c	/^int portCost;$/;"	v
 port_state	src/stp.c	/^typedef enum port_state {$/;"	g	file:
 priority	src/stp.c	/^unsigned char priority, extension;$/;"	v
@@ -61,8 +61,11 @@ rootExtension	src/stp.c	/^unsigned char rootPriority, rootExtension;$/;"	v
 rootPathCost	src/stp.c	/^int rootPathCost;$/;"	v
 rootPriority	src/stp.c	/^unsigned char rootPriority, rootExtension;$/;"	v
 sendSTP	src/stp.c	/^void sendSTP(int index){$/;"	f
+sendTCN	src/stp.c	/^void sendTCN(int index){$/;"	f
 senderThread	src/stp.c	/^void *senderThread(void *arg){$/;"	f
+sentPackages	src/stp.c	/^unsigned char **sentPackages;$/;"	v
 socks	src/stp.c	/^int *socks;$/;"	v
 states	src/stp.c	/^PortState *states;$/;"	v
+tca	src/stp.c	/^int tca;$/;"	v
 timestamps	src/stp.c	/^time_t *timestamps;$/;"	v
 updatePortStates	src/stp.c	/^void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned char age, unsigned char bPriority, unsigned char bExtension){$/;"	f

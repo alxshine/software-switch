@@ -32,7 +32,9 @@ unsigned char **interfaces;
 unsigned char *bridgeId;
 unsigned char ***macTable;
 int *macIndices;
-unsigned char **lastSwitchPackets;
+unsigned char **sentPackages;
+int numPackages;
+int packageIndex;
 PortState *states;
 time_t *timestamps;
 int *socks;
@@ -355,14 +357,11 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         }
 
         //skip packets sent by another interface listener
-        for(int i=0; i<n; i++)
-            if(i == currentIndex)
-                continue;
-            else
-                if(memcmp(lastSwitchPackets[i], bytes, header->len) == 0)
-                    return;
+        for(int i=0; i<numPackages; i++)
+            if(memcmp(sentPackages[i], bytes, header->len) == 0)
+                return;
 
-        memcpy(lastSwitchPackets[currentIndex], bytes, header->len);
+        memcpy(sentPackages[packageIndex++], bytes, header->len);
 
         //add src mac to mac table
         int found = 0;
@@ -482,6 +481,8 @@ int main(int argc, char ** argv){
     priority = 0x80;
     extension = 0x01;
     macTableSize = 30;
+    numPackages = 30;
+    packageIndex = 0;
 
     //configure globals
     int c=1;
@@ -509,7 +510,7 @@ int main(int argc, char ** argv){
     interfaces = (unsigned char **) calloc(n, sizeof(char*));
     macTable = (unsigned char ***) calloc(n, sizeof(char**));
     macIndices = (int *) calloc(n, sizeof(int));
-    lastSwitchPackets = (unsigned char **) calloc(n, sizeof(char*));
+    sentPackages = (unsigned char **) calloc(numPackages, sizeof(char*));
     states = (PortState *) calloc(n, sizeof(PortState));
     timestamps = (time_t *) calloc(n, sizeof(time_t));
     socks = (int *) calloc(n, sizeof(int));
@@ -519,7 +520,7 @@ int main(int argc, char ** argv){
         neighbours[i] = (unsigned char *) calloc(6, sizeof(char));
         interfaces[i] = (unsigned char *) calloc(6, sizeof(char));
         macTable[i] = (unsigned char **) calloc(30, sizeof(char **));
-        lastSwitchPackets[i] = (unsigned char*) calloc(65536, sizeof(char *));
+        sentPackages[i] = (unsigned char*) calloc(65536, sizeof(char *));
         for(int j=0; j<macTableSize; j++)
             macTable[i][j] = (unsigned char *) calloc(6,sizeof(char));
         for(int j=0; j<6; j++)
@@ -587,6 +588,11 @@ int main(int argc, char ** argv){
             free(macTable[i][j]);
         free(macTable[i]);
     }
+
+    for(int i=0; i<numPackages; i++)
+        free(sentPackages[i]);
+
+    free(sentPackages);
     free(names);
     free(neighbours);
     free(interfaces);

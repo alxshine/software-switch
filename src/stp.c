@@ -442,6 +442,13 @@ void dumpMacTable(){
 void *senderThread(void *arg){
     while(1){
         for(int i=0; i<n; i++){
+            pthread_mutex_lock(&ifaceMutex);
+            if(socks[i] < 0){
+                printf("interface %s is DISCONNECTED, not sending\n", names[i]);
+                pthread_mutex_unlock(&ifaceMutex);
+                continue;
+            }
+            pthread_mutex_unlock(&ifaceMutex);
             switch(states[i]){
                 case DEDICATED:
                     printf("interface %s is DEDICATED, sending packet\n", names[i]);
@@ -462,15 +469,48 @@ void *senderThread(void *arg){
 void *interFaceThread(void *arg){
     int currentIndex = *(int *) arg;
     char err[PCAP_ERRBUF_SIZE];
-    pthread_mutex_lock(&ifaceMutex);
     pcap_t *captureHandle = pcap_open_live(names[currentIndex], 65536, 1, 0, err);
     if(!captureHandle){
-        fprintf(stdout, "Could not start capture on device %s\n", names[0]);
+        fprintf(stderr, "Could not start capture on device %s\n", names[currentIndex]);
         return NULL;
     }
     printf("Capture handle on interface %s created\n", names[currentIndex]);
-    pthread_mutex_unlock(&ifaceMutex);
-    pcap_loop(captureHandle, -1, processPacket, (u_char *) &currentIndex);
+    while(1){
+        pcap_loop(captureHandle, -1, processPacket, (u_char *) &currentIndex);
+        
+        pcap_close(captureHandle);
+        pthread_mutex_lock(&ifaceMutex);
+        close(socks[currentIndex]);
+        socks[currentIndex] = -1;
+        pthread_mutex_unlock(&ifaceMutex);
+        printf("capture handle and socket on interface %s closed\n", names[currentIndex]);
+
+        printf("trying to find interface again\n");
+        captureHandle = NULL;
+        while(captureHandle == NULL){
+            sleep(1);
+
+            pcap_if_t *alldevs;
+            if(pcap_findalldevs(&alldevs, err)){
+                fprintf(stderr, "Could not find all interfaces, error code: %s\n", err);
+                exit(-1);
+            }
+            pcap_if_t *dev = alldevs;
+            for(; dev != NULL && strcmp(dev->name, names[currentIndex]); dev = dev->next)
+                ;
+            if(dev != NULL){
+                pthread_mutex_lock(&ifaceMutex);
+                if(create_socket(names[currentIndex], socks+currentIndex, interfaces[currentIndex]) < 0){
+                    perror("could not create socket");
+                    exit(-1);
+                }
+                pthread_mutex_unlock(&ifaceMutex);
+
+                captureHandle = pcap_open_live(names[currentIndex], 65536, 1, 0, err);
+            }
+        }
+        printf("interface %s found, restarting\n", names[currentIndex]);
+    }
 
     return NULL;
 }

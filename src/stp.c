@@ -361,10 +361,8 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
             if(sentPackages[i] != 0 && memcmp(sentPackages[i], bytes, header->len) == 0)
                 return;
 
-        printf("packageIndex: %d, header->len: %d\n", packageIndex, header->len);
         memcpy(sentPackages[packageIndex], bytes, header->len);
         packageIndex = (packageIndex+1)%numPackages;
-        printf("copy passed\n");
 
         //add src mac to mac table
         int found = 0;

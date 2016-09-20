@@ -52,6 +52,7 @@ n	src/stp.c	/^int n;$/;"	v
 names	src/stp.c	/^char **names;$/;"	v
 neighbours	src/stp.c	/^unsigned char **neighbours;$/;"	v
 numPackages	src/stp.c	/^int numPackages;$/;"	v
+packageIndex	src/stp.c	/^int packageIndex;$/;"	v
 portCost	src/stp.c	/^int portCost;$/;"	v
 port_state	src/stp.c	/^typedef enum port_state {$/;"	g	file:
 priority	src/stp.c	/^unsigned char priority, extension;$/;"	v

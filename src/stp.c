@@ -439,6 +439,7 @@ void dumpMacTable(){
 
 void *senderThread(void *arg){
     while(1){
+        printf("\nMESSAGE AGE IS: %d\n", messageAge);
         for(int i=0; i<n; i++){
             pthread_mutex_lock(&ifaceMutex);
             if(socks[i] < 0){

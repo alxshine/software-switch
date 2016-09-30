@@ -169,7 +169,7 @@ int compareBridges(unsigned char aPrio, unsigned char aExt, unsigned char *aMac,
         return aPrio - bPrio;
 }
 
-void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned char age, unsigned char bPriority, unsigned char bExtension){
+void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned short age, unsigned char bPriority, unsigned char bExtension){
     pthread_mutex_lock(&ifaceMutex);
 
     //check if the information on the ROOT port has changed
@@ -288,6 +288,7 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         payload+=2;
         psize-=2;
 
+        //one byte for flags
         pthread_mutex_lock(&ifaceMutex);
         unsigned char tcSet = *payload++;
         if(!hadTc && tcSet){
@@ -331,7 +332,9 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         psize-=2;
 
         //next 2 bytes is message age
-        short age = ntohs(*(short *) payload);
+        //for some magical reason this is already in host byte order
+        //Wireshark says otherwise, but whatever
+        short age = *(short *) payload;
         
         payload+=2;
         psize-=2;

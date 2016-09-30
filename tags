@@ -69,4 +69,4 @@ socks	src/stp.c	/^int *socks;$/;"	v
 states	src/stp.c	/^PortState *states;$/;"	v
 tca	src/stp.c	/^int tca;$/;"	v
 timestamps	src/stp.c	/^time_t *timestamps;$/;"	v
-updatePortStates	src/stp.c	/^void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned char age, unsigned char bPriority, unsigned char bExtension){$/;"	f
+updatePortStates	src/stp.c	/^void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned short age, unsigned char bPriority, unsigned char bExtension){$/;"	f

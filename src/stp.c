@@ -172,6 +172,13 @@ int compareBridges(unsigned char aPrio, unsigned char aExt, unsigned char *aMac,
 void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char rExtension, unsigned char *rMac, unsigned int pathCost, unsigned char age, unsigned char bPriority, unsigned char bExtension){
     pthread_mutex_lock(&ifaceMutex);
 
+    //check if the information on the ROOT port has changed
+    if(states[currentIndex] == ROOT)
+        if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) != 0 || pathCost +portCost != rootPathCost)
+            //force reset
+            for(int i=0; i<n; i++)
+                states[i] = DEDICATED;
+
     //check for a root change
     if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) < 0 ||
             (compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) == 0 && pathCost + portCost < rootPathCost)){
@@ -212,7 +219,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
                 states[currentIndex] = DEDICATED;
     }
 
-    //if a port should is DEDICATED but shouldn't be, change it
+    //if a port is DEDICATED but shouldn't be, change it
     //only possibility should be same root different path cost
     if(states[currentIndex] == DEDICATED){
         //only change if the neighbour has the same root (smaller root is handled by root change, larger root is ignored -> stay DEDICATED)
@@ -234,7 +241,8 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
     pthread_mutex_lock(&ifaceMutex);
     int hasRoot = 0;
     for(int i=0; i<n; i++){
-        if(timestamps[i] + forwardDelay < time(0))
+        //comparing the timestamps to 2*helloTime is not 100% correct but a lot faster
+        if(timestamps[i] + 2*helloTime < time(0))
             states[i] = DEDICATED;
         if(states[i] == ROOT)
             hasRoot = 1;

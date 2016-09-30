@@ -173,11 +173,15 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
     pthread_mutex_lock(&ifaceMutex);
 
     //check if the information on the ROOT port has changed
-    if(states[currentIndex] == ROOT)
-        if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) != 0 || pathCost +portCost != rootPathCost)
+    if(states[currentIndex] == ROOT){
+        if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) != 0 || pathCost +portCost != rootPathCost){
             //force reset
-            for(int i=0; i<n; i++)
+            for(int i=0; i<n; i++){
                 states[i] = DEDICATED;
+                messageAge = 0;
+            }
+        }
+    }
 
     //check for a root change
     if(compareBridges(rPriority, rExtension, rMac, rootPriority, rootExtension, root) < 0 ||
@@ -205,6 +209,7 @@ void updatePortStates(int currentIndex, unsigned char rPriority, unsigned char r
 
         for(int i=0; i<n; i++)
             states[i] = DEDICATED;
+        messageAge = 0;
     }
 
     //if a port is in the BLOCKING state but shouldn't be, change it
@@ -259,6 +264,7 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
         rootPriority = priority;
         rootExtension = extension;
         rootPathCost = 0;
+        messageAge = 0;
         for(int i=0; i<n; i++)
             states[i] = DEDICATED;
     }

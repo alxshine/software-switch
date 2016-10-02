@@ -246,8 +246,7 @@ void processPacket(u_char *user, const struct pcap_pkthdr *header, const u_char 
     pthread_mutex_lock(&ifaceMutex);
     int hasRoot = 0;
     for(int i=0; i<n; i++){
-        //comparing the timestamps to 2*helloTime is not 100% correct but a lot faster
-        if(timestamps[i] + 2*helloTime < time(0))
+        if(timestamps[i] + forwardDelay < time(0))
             states[i] = DEDICATED;
         if(states[i] == ROOT)
             hasRoot = 1;
